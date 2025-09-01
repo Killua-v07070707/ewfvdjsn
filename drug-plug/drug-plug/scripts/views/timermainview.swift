@@ -19,23 +19,32 @@ struct TimerView: View {
     
     var body: some View {
         GeometryReader { geometry in
+            let isCompact = geometry.size.width < 400
+            let isVeryCompact = geometry.size.width < 320
+            let availableWidth = geometry.size.width
+            let availableHeight = geometry.size.height
+            
             ScrollView {
-                VStack(spacing: 32) {
-                    // Progress dots
-                    HStack(spacing: 8) {
-                        ForEach(0..<7, id: \.self) { index in
-                            Circle()
-                                .fill(index == 0 ? Color.red : Color.gray.opacity(0.3))
-                                .frame(width: 8, height: 8)
+                VStack(spacing: isCompact ? 16 : 32) {
+                    // Progress dots - hide on very small screens
+                    if !isVeryCompact {
+                        HStack(spacing: 8) {
+                            ForEach(0..<7, id: \.self) { index in
+                                Circle()
+                                    .fill(index == 0 ? Color.red : Color.gray.opacity(0.3))
+                                    .frame(width: 8, height: 8)
+                            }
                         }
+                        .padding(.top, isCompact ? 12 : 24)
                     }
-                    .padding(.top, 24)
                     
                     // Focus Question Section
-                    VStack(spacing: 24) {
+                    VStack(spacing: isCompact ? 16 : 24) {
                         Text("What's your focus?")
                             .font(.title2.weight(.semibold))
                             .foregroundColor(.black)
+                            .minimumScaleFactor(0.7)
+                            .lineLimit(1)
                         
                         // Category selector
                         Button(action: { showingCategoryPicker = true }) {
@@ -47,13 +56,15 @@ struct TimerView: View {
                                 Text(selectedCategory)
                                     .font(.subheadline.weight(.medium))
                                     .foregroundColor(.black)
+                                    .minimumScaleFactor(0.8)
+                                    .lineLimit(1)
                                 
                                 Image(systemName: "chevron.down")
                                     .font(.caption)
                                     .foregroundColor(.gray)
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, isCompact ? 12 : 20)
+                            .padding(.vertical, isCompact ? 8 : 12)
                             .background(
                                 Capsule()
                                     .fill(Color.white)
@@ -86,8 +97,8 @@ struct TimerView: View {
                             .textFieldStyle(PlainTextFieldStyle())
                             .font(.subheadline)
                             .foregroundColor(.black)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 16)
+                            .padding(.horizontal, isCompact ? 12 : 20)
+                            .padding(.vertical, isCompact ? 12 : 16)
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
                                     .fill(Color.white)
@@ -97,29 +108,41 @@ struct TimerView: View {
                                     )
                                     .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                             )
-                            .frame(maxWidth: min(geometry.size.width - 64, 300))
+                            .frame(maxWidth: min(availableWidth - (isCompact ? 32 : 64), 300))
                     }
                     
-                    // Circular Timer
-                    CircularTimerView()
-                        .frame(width: min(geometry.size.width - 100, 280), height: min(geometry.size.width - 100, 280))
+                    // Circular Timer - dynamically sized
+                    let timerSize = min(
+                        min(availableWidth - (isCompact ? 60 : 100), 280),
+                        min(availableHeight * 0.4, 280)
+                    )
+                    
+                    CircularTimerView(size: timerSize)
+                        .frame(width: timerSize, height: timerSize)
                     
                     // Time display
                     Text(timerManager.displayTime)
-                        .font(.system(size: min(geometry.size.width / 12, 32), weight: .light, design: .monospaced))
+                        .font(.system(
+                            size: min(availableWidth / (isCompact ? 8 : 12), isCompact ? 24 : 32), 
+                            weight: .light, 
+                            design: .monospaced
+                        ))
                         .foregroundColor(.gray)
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
                     
-                    // Session time range
-                    if !timerManager.isRunning {
+                    // Session time range - hide on very small screens
+                    if !timerManager.isRunning && !isVeryCompact {
                         Text("21:14 → 09:46")
                             .font(.caption.weight(.medium))
                             .foregroundColor(.gray)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 6)
+                            .padding(.horizontal, isCompact ? 12 : 16)
+                            .padding(.vertical, isCompact ? 4 : 6)
                             .background(
                                 Capsule()
                                     .fill(Color.gray.opacity(0.1))
                             )
+                            .minimumScaleFactor(0.8)
                     }
                     
                     // Start Session Button
@@ -127,9 +150,14 @@ struct TimerView: View {
                         Text(timerManager.isRunning ? "STOP SESSION" : "START SESSION")
                             .font(.headline.weight(.bold))
                             .foregroundColor(.white)
-                            .frame(maxWidth: min(geometry.size.width - 64, 250), minHeight: 50)
+                            .minimumScaleFactor(0.7)
+                            .lineLimit(1)
+                            .frame(
+                                maxWidth: min(availableWidth - (isCompact ? 32 : 64), 250), 
+                                minHeight: isCompact ? 44 : 50
+                            )
                             .background(
-                                RoundedRectangle(cornerRadius: 25)
+                                RoundedRectangle(cornerRadius: isCompact ? 22 : 25)
                                     .fill(Color.red)
                                     .shadow(color: .red.opacity(0.3), radius: 8, x: 0, y: 4)
                             )
@@ -143,22 +171,25 @@ struct TimerView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "timer")
                                 .font(.subheadline)
-                            Text("Timer Settings")
-                                .font(.subheadline.weight(.medium))
+                            if !isCompact {
+                                Text("Timer Settings")
+                                    .font(.subheadline.weight(.medium))
+                                    .minimumScaleFactor(0.8)
+                            }
                         }
                         .foregroundColor(.gray)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, isCompact ? 12 : 16)
+                        .padding(.vertical, isCompact ? 6 : 8)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(Color.gray.opacity(0.1))
                         )
                     }
                     .buttonStyle(PlainButtonStyle())
-                    .padding(.bottom, 32)
+                    .padding(.bottom, isCompact ? 16 : 32)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, isCompact ? 16 : 32)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -181,6 +212,12 @@ struct TimerView: View {
 
 struct CircularTimerView: View {
     @EnvironmentObject var timerManager: TimerManager
+    let size: CGFloat
+    
+    private var circleSize: CGFloat { size * 0.85 }
+    private var strokeWidth: CGFloat { max(size * 0.03, 4) }
+    private var tickOffset: CGFloat { circleSize / 2 }
+    private var dotSize: CGFloat { max(size * 0.06, 12) }
     
     var body: some View {
         ZStack {
@@ -190,18 +227,18 @@ struct CircularTimerView: View {
                     Rectangle()
                         .fill(Color.gray.opacity(tick % 15 == 0 ? 0.8 : (tick % 5 == 0 ? 0.4 : 0.2)))
                         .frame(
-                            width: tick % 15 == 0 ? 3 : (tick % 5 == 0 ? 2 : 1),
-                            height: tick % 15 == 0 ? 20 : (tick % 5 == 0 ? 12 : 6)
+                            width: tick % 15 == 0 ? max(size * 0.012, 2) : (tick % 5 == 0 ? max(size * 0.008, 1.5) : max(size * 0.004, 1)),
+                            height: tick % 15 == 0 ? max(size * 0.08, 16) : (tick % 5 == 0 ? max(size * 0.05, 10) : max(size * 0.025, 5))
                         )
-                        .offset(y: -120)
+                        .offset(y: -tickOffset)
                         .rotationEffect(.degrees(Double(tick) * 6))
                 }
             }
             
             // Background circle
             Circle()
-                .stroke(Color.gray.opacity(0.2), lineWidth: 8)
-                .frame(width: 240, height: 240)
+                .stroke(Color.gray.opacity(0.2), lineWidth: strokeWidth)
+                .frame(width: circleSize, height: circleSize)
             
             // Progress circle with gradient
             Circle()
@@ -212,29 +249,31 @@ struct CircularTimerView: View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                    style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
                 )
-                .frame(width: 240, height: 240)
+                .frame(width: circleSize, height: circleSize)
                 .rotationEffect(.degrees(-90))
                 .animation(.easeInOut(duration: 1.0), value: timerManager.progress)
             
             // Progress indicator dot
             Circle()
                 .fill(Color.red)
-                .frame(width: 16, height: 16)
-                .offset(y: -120)
+                .frame(width: dotSize, height: dotSize)
+                .offset(y: -tickOffset)
                 .rotationEffect(.degrees(-90 + (timerManager.progress * 360)))
-                .shadow(color: .red.opacity(0.4), radius: 4, x: 0, y: 2)
+                .shadow(color: .red.opacity(0.4), radius: max(size * 0.015, 3), x: 0, y: 2)
                 .animation(.easeInOut(duration: 1.0), value: timerManager.progress)
             
             // Center content
-            VStack(spacing: 8) {
+            VStack(spacing: max(size * 0.03, 6)) {
                 Text(timerManager.isRunning ? "LOCKED IN" : "READY")
-                    .font(.caption.weight(.semibold))
+                    .font(.system(size: max(size * 0.04, 8), weight: .semibold))
                     .foregroundColor(timerManager.isRunning ? .red : .gray)
                     .tracking(2)
+                    .minimumScaleFactor(0.6)
                     .animation(.easeInOut, value: timerManager.isRunning)
             }
         }
+        .frame(width: size, height: size)
     }
 }

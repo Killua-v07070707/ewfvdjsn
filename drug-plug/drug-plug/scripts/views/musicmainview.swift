@@ -11,45 +11,54 @@ struct MusicMainView: View {
     @EnvironmentObject var musicPlayer: MusicPlayerService
     
     var body: some View {
-        VStack(spacing: 32) {
-            // Header
-            Text("Focus Music")
-                .font(.title2.weight(.bold))
-                .foregroundColor(.black)
-                .padding(.top, 24)
+        GeometryReader { geometry in
+            let isCompact = geometry.size.width < 400
             
-            // Compact Music Player
-            CompactMusicPlayerView()
-            
-            // Music Categories
-            VStack(alignment: .leading, spacing: 20) {
-                Text("FOCUS PLAYLISTS")
-                    .font(.caption.weight(.bold))
-                    .foregroundColor(.gray)
-                    .tracking(1)
-                    .padding(.horizontal, 32)
-                
-                LazyVStack(spacing: 8) {
-                    ForEach(musicPlayer.focusPlaylists.prefix(4)) { track in
-                        TrackCard(track: track)
+            ScrollView {
+                VStack(spacing: isCompact ? 20 : 32) {
+                    // Header
+                    Text("Focus Music")
+                        .font(.title2.weight(.bold))
+                        .foregroundColor(.black)
+                        .minimumScaleFactor(0.8)
+                        .padding(.top, isCompact ? 16 : 24)
+                    
+                    // Compact Music Player
+                    CompactMusicPlayerView(isCompact: isCompact)
+                    
+                    // Music Categories
+                    VStack(alignment: .leading, spacing: isCompact ? 12 : 20) {
+                        Text("FOCUS PLAYLISTS")
+                            .font(.caption.weight(.bold))
+                            .foregroundColor(.gray)
+                            .tracking(1)
+                            .padding(.horizontal, isCompact ? 16 : 32)
+                        
+                        LazyVStack(spacing: 8) {
+                            ForEach(musicPlayer.focusPlaylists.prefix(4)) { track in
+                                TrackCard(track: track, isCompact: isCompact)
+                            }
+                        }
+                        .padding(.horizontal, isCompact ? 16 : 32)
                     }
+                    
+                    Spacer(minLength: isCompact ? 16 : 32)
                 }
-                .padding(.horizontal, 32)
+                .frame(maxWidth: .infinity)
             }
-            
-            Spacer()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
 struct CompactMusicPlayerView: View {
     @EnvironmentObject var musicPlayer: MusicPlayerService
+    let isCompact: Bool
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: isCompact ? 12 : 16) {
             // Album Art
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: isCompact ? 16 : 20)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -60,7 +69,7 @@ struct CompactMusicPlayerView: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .frame(width: 80, height: 80)
+                .frame(width: isCompact ? 60 : 80, height: isCompact ? 60 : 80)
                 .overlay(
                     Image(systemName: "music.note")
                         .font(.title2.weight(.light))
@@ -73,16 +82,18 @@ struct CompactMusicPlayerView: View {
                 Text(musicPlayer.currentTrack?.title ?? "No track selected")
                     .font(.subheadline.weight(.medium))
                     .foregroundColor(.black)
+                    .minimumScaleFactor(0.8)
                     .lineLimit(1)
                 
                 Text(musicPlayer.currentTrack?.artist ?? "Select music to focus")
                     .font(.caption)
                     .foregroundColor(.gray)
+                    .minimumScaleFactor(0.8)
                     .lineLimit(1)
             }
             
             // Controls
-            HStack(spacing: 20) {
+            HStack(spacing: isCompact ? 12 : 20) {
                 Button(action: { musicPlayer.previousTrack() }) {
                     Image(systemName: "backward.fill")
                         .font(.title3)
@@ -92,14 +103,14 @@ struct CompactMusicPlayerView: View {
                 
                 Button(action: { musicPlayer.togglePlayPause() }) {
                     Image(systemName: musicPlayer.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 36))
+                        .font(.system(size: isCompact ? 28 : 36))
                         .foregroundColor(.white)
                         .background(
                             Circle()
                                 .fill(
                                     Color.red
                                 )
-                                .frame(width: 44, height: 44)
+                                .frame(width: isCompact ? 36 : 44, height: isCompact ? 36 : 44)
                                 .shadow(color: .red.opacity(0.3), radius: 6, x: 0, y: 3)
                         )
                 }
@@ -113,7 +124,7 @@ struct CompactMusicPlayerView: View {
                 .buttonStyle(PlainButtonStyle())
             }
         }
-        .padding(24)
+        .padding(isCompact ? 16 : 24)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(
@@ -124,12 +135,13 @@ struct CompactMusicPlayerView: View {
                         .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                 )
         )
-        .padding(.horizontal, 32)
+        .padding(.horizontal, isCompact ? 16 : 32)
     }
 }
 
 struct TrackCard: View {
     let track: Track
+    let isCompact: Bool
     @EnvironmentObject var musicPlayer: MusicPlayerService
     
     var body: some View {
@@ -139,21 +151,23 @@ struct TrackCard: View {
             HStack(spacing: 12) {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.gray.opacity(0.3))
-                    .frame(width: 40, height: 40)
+                    .frame(width: isCompact ? 32 : 40, height: isCompact ? 32 : 40)
                     .overlay(
                         Image(systemName: "music.note")
                             .foregroundColor(.gray)
-                            .font(.caption)
+                            .font(isCompact ? .caption2 : .caption)
                     )
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(track.title)
                         .foregroundColor(.black)
                         .font(.subheadline.weight(.medium))
+                        .minimumScaleFactor(0.8)
                         .lineLimit(1)
                     Text(track.artist)
                         .foregroundColor(.gray)
                         .font(.caption)
+                        .minimumScaleFactor(0.8)
                         .lineLimit(1)
                 }
                 
@@ -163,7 +177,7 @@ struct TrackCard: View {
                     .foregroundColor(musicPlayer.currentTrack?.id == track.id ? .orange : .gray)
                     .font(.subheadline)
             }
-            .padding(16)
+            .padding(isCompact ? 12 : 16)
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color.gray.opacity(0.05))
